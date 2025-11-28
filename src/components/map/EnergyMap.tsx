@@ -1,10 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { House, GridLine, Transformer } from '@/types/energy';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 // Fix for default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -69,12 +67,12 @@ const createTransformerIcon = () => {
   });
 };
 
-const MapUpdater = ({ center }: { center: [number, number] }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
-  return null;
+const getLineColor = (status: string) => {
+  switch (status) {
+    case 'fault': return '#EF4444';
+    case 'warning': return '#EAB308';
+    default: return '#0FA958';
+  }
 };
 
 export const EnergyMap = ({
@@ -85,119 +83,138 @@ export const EnergyMap = ({
   onHouseSelect,
   height = "500px",
 }: EnergyMapProps) => {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const markersRef = useRef<L.LayerGroup | null>(null);
+  const linesRef = useRef<L.LayerGroup | null>(null);
   const navigate = useNavigate();
-  const mapCenter: [number, number] = [-1.6771, 29.2385]; // Goma, DRC
 
-  const getLineColor = (status: string) => {
-    switch (status) {
-      case 'fault': return '#EF4444';
-      case 'warning': return '#EAB308';
-      default: return '#0FA958';
-    }
-  };
+  // Initialize map
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const mapCenter: L.LatLngExpression = [-1.6771, 29.2385]; // Goma, DRC
+    
+    mapRef.current = L.map(containerRef.current, {
+      center: mapCenter,
+      zoom: 14,
+      zoomControl: true,
+    });
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(mapRef.current);
+
+    markersRef.current = L.layerGroup().addTo(mapRef.current);
+    linesRef.current = L.layerGroup().addTo(mapRef.current);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update grid lines
+  useEffect(() => {
+    if (!linesRef.current || !mapRef.current) return;
+
+    linesRef.current.clearLayers();
+
+    gridLines.forEach((line) => {
+      const polyline = L.polyline(line.coordinates as L.LatLngExpression[], {
+        color: getLineColor(line.status),
+        weight: 4,
+        opacity: 0.8,
+        dashArray: line.faultDetected ? '10, 10' : undefined,
+      });
+
+      polyline.bindPopup(`
+        <div style="padding: 8px; min-width: 180px;">
+          <h4 style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">${line.name}</h4>
+          <div style="font-size: 12px; line-height: 1.5;">
+            <p>Voltage: ${line.voltage.toFixed(1)} kV</p>
+            <p>Current: ${line.current.toFixed(1)} A</p>
+            <p>Power: ${(line.power / 1000).toFixed(1)} kW</p>
+            <p>Load: ${line.loadPercentage}%</p>
+            ${line.faultDetected ? '<p style="color: #EF4444; font-weight: 500;">⚠️ Fault Detected</p>' : ''}
+          </div>
+        </div>
+      `);
+
+      linesRef.current?.addLayer(polyline);
+    });
+  }, [gridLines]);
+
+  // Update markers (houses and transformers)
+  useEffect(() => {
+    if (!markersRef.current || !mapRef.current) return;
+
+    markersRef.current.clearLayers();
+
+    // Add transformers
+    transformers.forEach((transformer) => {
+      const marker = L.marker([transformer.latitude, transformer.longitude], {
+        icon: createTransformerIcon(),
+      });
+
+      marker.bindPopup(`
+        <div style="padding: 8px; min-width: 180px;">
+          <h4 style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">${transformer.name}</h4>
+          <div style="font-size: 12px; line-height: 1.5;">
+            <p>Capacity: ${(transformer.capacity / 1000).toFixed(0)} kW</p>
+            <p>Load: ${(transformer.currentLoad / 1000).toFixed(0)} kW (${Math.round(transformer.currentLoad / transformer.capacity * 100)}%)</p>
+            <p>Temperature: ${transformer.temperature}°C</p>
+          </div>
+        </div>
+      `);
+
+      markersRef.current?.addLayer(marker);
+    });
+
+    // Add houses
+    houses.forEach((house) => {
+      const marker = L.marker([house.latitude, house.longitude], {
+        icon: createHouseIcon(house.status),
+      });
+
+      const statusColor = house.status === 'online' ? '#0FA958' : house.status === 'warning' ? '#EAB308' : '#EF4444';
+
+      marker.bindPopup(`
+        <div style="padding: 8px; min-width: 160px;">
+          <h4 style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">${house.name}</h4>
+          <div style="font-size: 12px; line-height: 1.5;">
+            <p style="color: ${statusColor}; font-weight: 500;">Status: ${house.status}</p>
+            <p>Voltage: ${house.voltage.toFixed(1)} V</p>
+            <p>Power: ${house.power.toFixed(0)} W</p>
+          </div>
+        </div>
+      `);
+
+      marker.on('click', () => {
+        if (onHouseSelect) {
+          onHouseSelect(house);
+        } else {
+          navigate(`/houses/${house.id}`);
+        }
+      });
+
+      markersRef.current?.addLayer(marker);
+    });
+  }, [houses, transformers, onHouseSelect, navigate]);
+
+  // Center on selected house
+  useEffect(() => {
+    if (!mapRef.current || !selectedHouse) return;
+    mapRef.current.setView([selectedHouse.latitude, selectedHouse.longitude], mapRef.current.getZoom());
+  }, [selectedHouse]);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-border" style={{ height }}>
-      <MapContainer
-        center={mapCenter}
-        zoom={14}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-
-        {selectedHouse && (
-          <MapUpdater center={[selectedHouse.latitude, selectedHouse.longitude]} />
-        )}
-
-        {/* Grid Lines */}
-        {gridLines.map((line) => (
-          <Polyline
-            key={line.lineId}
-            positions={line.coordinates as [number, number][]}
-            pathOptions={{
-              color: getLineColor(line.status),
-              weight: 4,
-              opacity: 0.8,
-              dashArray: line.faultDetected ? '10, 10' : undefined,
-            }}
-          >
-            <Popup>
-              <div className="p-2 min-w-[180px]">
-                <h4 className="font-semibold text-sm mb-2">{line.name}</h4>
-                <div className="space-y-1 text-xs">
-                  <p>Voltage: {line.voltage.toFixed(1)} kV</p>
-                  <p>Current: {line.current.toFixed(1)} A</p>
-                  <p>Power: {(line.power / 1000).toFixed(1)} kW</p>
-                  <p>Load: {line.loadPercentage}%</p>
-                  {line.faultDetected && (
-                    <p className="text-red-500 font-medium">⚠️ Fault Detected</p>
-                  )}
-                </div>
-              </div>
-            </Popup>
-          </Polyline>
-        ))}
-
-        {/* Transformers */}
-        {transformers.map((transformer) => (
-          <Marker
-            key={transformer.id}
-            position={[transformer.latitude, transformer.longitude]}
-            icon={createTransformerIcon()}
-          >
-            <Popup>
-              <div className="p-2 min-w-[180px]">
-                <h4 className="font-semibold text-sm mb-2">{transformer.name}</h4>
-                <div className="space-y-1 text-xs">
-                  <p>Capacity: {(transformer.capacity / 1000).toFixed(0)} kW</p>
-                  <p>Load: {(transformer.currentLoad / 1000).toFixed(0)} kW ({Math.round(transformer.currentLoad / transformer.capacity * 100)}%)</p>
-                  <p>Temperature: {transformer.temperature}°C</p>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-
-        {/* Houses */}
-        {houses.map((house) => (
-          <Marker
-            key={house.id}
-            position={[house.latitude, house.longitude]}
-            icon={createHouseIcon(house.status)}
-            eventHandlers={{
-              click: () => {
-                if (onHouseSelect) {
-                  onHouseSelect(house);
-                } else {
-                  navigate(`/houses/${house.id}`);
-                }
-              },
-            }}
-          >
-            <Popup>
-              <div className="p-2 min-w-[160px]">
-                <h4 className="font-semibold text-sm mb-2">{house.name}</h4>
-                <div className="space-y-1 text-xs">
-                  <p className={cn(
-                    "font-medium",
-                    house.status === 'online' && "text-green-500",
-                    house.status === 'warning' && "text-yellow-500",
-                    house.status === 'offline' && "text-red-500"
-                  )}>
-                    Status: {house.status}
-                  </p>
-                  <p>Voltage: {house.voltage.toFixed(1)} V</p>
-                  <p>Power: {house.power.toFixed(0)} W</p>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
+    <div 
+      ref={containerRef} 
+      className="rounded-xl overflow-hidden border border-border" 
+      style={{ height, width: '100%' }} 
+    />
   );
 };
