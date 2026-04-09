@@ -211,10 +211,11 @@ export const EnergyMap = ({
   }, [selectedHouse]);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="rounded-xl overflow-hidden border border-border" 
-      style={{ height, width: '100%' }} 
-    />
+    <div className="rounded-xl overflow-hidden border border-border" style={{ isolation: 'isolate' }}>
+      <div 
+        ref={containerRef} 
+        style={{ height, width: '100%' }} 
+      />
+    </div>
   );
 };

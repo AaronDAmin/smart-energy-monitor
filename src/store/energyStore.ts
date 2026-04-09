@@ -32,7 +32,7 @@ interface EnergyState {
 }
 
 const defaultSettings: Settings = {
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: 'https://energy.wappnet.cc/api',
   refreshInterval: 30000,
   alertThreshold: {
     voltageMin: 200,

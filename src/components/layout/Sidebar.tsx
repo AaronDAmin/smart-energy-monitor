@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -6,7 +7,9 @@ import {
   Zap, 
   Bell, 
   Settings,
-  Activity
+  Activity,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEnergyStore } from '@/store/energyStore';
@@ -23,82 +26,125 @@ const navItems = [
 export const Sidebar = () => {
   const { systemStats, isBackendConnected } = useEnergyStore();
   const unacknowledgedAlerts = systemStats?.activeAlerts || 0;
+  const [isOpen, setIsOpen] = useState(false);
+
+  const closeSidebar = () => setIsOpen(false);
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center glow-green-sm">
-            <Zap className="w-6 h-6 text-primary" />
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar border-b border-sidebar-border flex items-center px-4 z-50">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-2 ml-3">
+          <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-primary" />
           </div>
-          <div>
-            <h1 className="font-semibold text-foreground">EnergyGrid</h1>
-            <p className="text-xs text-muted-foreground">Smart Monitoring</p>
-          </div>
+          <span className="font-semibold text-foreground text-sm">EnergyGrid</span>
         </div>
       </div>
 
-      {/* Connection Status */}
-      <div className="px-4 py-3 mx-4 mt-4 rounded-lg bg-secondary/50">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "w-2 h-2 rounded-full",
-            isBackendConnected ? "bg-energy-green animate-pulse" : "bg-energy-yellow"
-          )} />
-          <span className="text-xs text-muted-foreground">
-            {isBackendConnected ? 'Backend Connected' : 'Using Mock Data'}
-          </span>
-        </div>
-      </div>
+      {/* Overlay */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={closeSidebar}
+        />
+      )}
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                "sidebar-item",
-                isActive && "sidebar-item-active bg-primary/10"
-              )
-            }
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed left-0 top-0 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col z-50 transition-transform duration-300",
+        "lg:translate-x-0",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Logo */}
+        <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center glow-green-sm">
+              <Zap className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-foreground">EnergyGrid</h1>
+              <p className="text-xs text-muted-foreground">Smart Monitoring</p>
+            </div>
+          </div>
+          <button
+            onClick={closeSidebar}
+            className="lg:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary"
+            aria-label="Close menu"
           >
-            <Icon className="w-5 h-5" />
-            <span className="flex-1">{label}</span>
-            {label === 'Alerts' && unacknowledgedAlerts > 0 && (
-              <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-destructive text-destructive-foreground">
-                {unacknowledgedAlerts}
-              </span>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-      {/* System Status */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="p-3 rounded-lg bg-secondary/30">
-          <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-4 h-4 text-primary" />
-            <span className="text-xs font-medium text-foreground">System Status</span>
+        {/* Connection Status */}
+        <div className="px-4 py-3 mx-4 mt-4 rounded-lg bg-secondary/50">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              isBackendConnected ? "bg-energy-green animate-pulse" : "bg-energy-yellow"
+            )} />
+            <span className="text-xs text-muted-foreground">
+              {isBackendConnected ? 'Backend Connected' : 'Using Mock Data'}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span className="text-muted-foreground">Houses</span>
-              <p className="font-mono text-foreground">
-                {systemStats?.onlineHouses || 0}/{systemStats?.totalHouses || 0}
-              </p>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={closeSidebar}
+              className={({ isActive }) =>
+                cn(
+                  "sidebar-item",
+                  isActive && "sidebar-item-active bg-primary/10"
+                )
+              }
+            >
+              <Icon className="w-5 h-5" />
+              <span className="flex-1">{label}</span>
+              {label === 'Alerts' && unacknowledgedAlerts > 0 && (
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-destructive text-destructive-foreground">
+                  {unacknowledgedAlerts}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* System Status */}
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="p-3 rounded-lg bg-secondary/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-primary" />
+              <span className="text-xs font-medium text-foreground">System Status</span>
             </div>
-            <div>
-              <span className="text-muted-foreground">Efficiency</span>
-              <p className="font-mono text-primary">
-                {systemStats?.gridEfficiency?.toFixed(1) || '0'}%
-              </p>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-muted-foreground">Houses</span>
+                <p className="font-mono text-foreground">
+                  {systemStats?.onlineHouses || 0}/{systemStats?.totalHouses || 0}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Efficiency</span>
+                <p className="font-mono text-primary">
+                  {systemStats?.gridEfficiency?.toFixed(1) || '0'}%
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };

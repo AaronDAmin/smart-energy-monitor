@@ -54,8 +54,8 @@ const SettingsPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64 min-h-screen">
-        <div className="p-6 space-y-6 max-w-4xl">
+      <main className="lg:ml-64 pt-14 lg:pt-0 min-h-screen">
+        <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
           {/* Header */}
           <div>
             <h1 className="text-2xl font-bold text-foreground">Settings</h1>
@@ -117,7 +117,7 @@ const SettingsPage = () => {
                   id="apiUrl"
                   value={localSettings.apiUrl}
                   onChange={(e) => setLocalSettings({ ...localSettings, apiUrl: e.target.value })}
-                  placeholder="http://localhost:3000/api"
+                  placeholder="https://energy.wappnet.cc/api"
                   className="bg-secondary border-border font-mono"
                 />
                 <p className="text-xs text-muted-foreground">

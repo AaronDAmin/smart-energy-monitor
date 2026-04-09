@@ -50,7 +50,7 @@ const HouseDetailsPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Sidebar />
-        <main className="ml-64 min-h-screen flex items-center justify-center">
+        <main className="lg:ml-64 pt-14 lg:pt-0 min-h-screen flex items-center justify-center">
           <div className="text-center">
             <p className="text-muted-foreground mb-4">House not found</p>
             <Button onClick={() => navigate('/houses')}>Back to Houses</Button>
@@ -63,8 +63,8 @@ const HouseDetailsPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64 min-h-screen">
-        <div className="p-6 space-y-6">
+      <main className="lg:ml-64 pt-14 lg:pt-0 min-h-screen">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button
