@@ -11,7 +11,10 @@ import {
   Save,
   RotateCcw,
   Wifi,
-  WifiOff
+  WifiOff,
+  Github,
+  Instagram,
+  Globe
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -62,6 +65,51 @@ const SettingsPage = () => {
             <p className="text-sm text-muted-foreground">
               Configure your energy monitoring system
             </p>
+          </div>
+
+          {/* Developer Info */}
+          <div className="bg-card rounded-xl border border-border p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <span className="text-primary font-bold text-sm">AA</span>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Aaron D'Amin</p>
+                <p className="text-xs text-muted-foreground">Developer</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <a
+                href="https://github.com/AaronDAmin/smart-energy-monitor.git"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+              >
+                <Github className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">AaronDAmin</span>
+                <span className="ml-auto text-xs text-muted-foreground">GitHub</span>
+              </a>
+              <a
+                href="https://instagram.com/aaron_vyal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+              >
+                <Instagram className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">aaron_vyal</span>
+                <span className="ml-auto text-xs text-muted-foreground">Instagram</span>
+              </a>
+              <a
+                href="https://aaron-portfolio.buyin.cc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+              >
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">aaron-portofolio.buyin.cc</span>
+                <span className="ml-auto text-xs text-muted-foreground">Portfolio</span>
+              </a>
+            </div>
           </div>
 
           {/* Connection Status */}

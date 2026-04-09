@@ -6,6 +6,8 @@ Traditional grids are reactive — they only respond after a failure. This proje
 
 ![React](https://img.shields.io/badge/React-18-blue?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-7-purple?logo=vite) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-teal?logo=tailwindcss)
 
+🌐 **Live Demo:** [https://energy.wappnet.cc](https://energy.wappnet.cc)
+
 ![EnergyGrid Dashboard](./public/Screenshot%202026-04-09%20100242.png)
 
 ---
