@@ -1,73 +1,154 @@
-# Welcome to your Lovable project
+# EnergyGrid — Smart Energy Monitoring for Goma City
 
-## Project info
+A real-time IoT-based energy monitoring dashboard built to bring intelligence and observability into power distribution in Goma, DRC.
 
-**URL**: https://lovable.dev/projects/8c00a3d5-1858-48e3-9781-e5fccd883ac0
+Traditional grids are reactive — they only respond after a failure. This project shifts that paradigm toward a predictive and adaptive system, giving operators full visibility into consumption, voltage stability, and grid health across 100 connected households.
 
-## How can I edit this code?
+![React](https://img.shields.io/badge/React-18-blue?logo=react) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript) ![Vite](https://img.shields.io/badge/Vite-7-purple?logo=vite) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-teal?logo=tailwindcss)
 
-There are several ways of editing your application.
+![EnergyGrid Dashboard](./public/Screenshot%202026-04-09%20100242.png)
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8c00a3d5-1858-48e3-9781-e5fccd883ac0) and start prompting.
+## The Problem
 
-Changes made via Lovable will be committed automatically to this repo.
+In many growing cities, electricity infrastructure hasn't evolved at the same pace as population and economic activity. In Goma, this leads to:
 
-**Use your preferred IDE**
+- Frequent outages with no early warning
+- Unstable voltage propagating before detection
+- No granular visibility at neighborhood or household level
+- Energy providers unable to anticipate demand peaks
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+This dashboard is the frontend layer of a broader smart grid architecture designed to address these issues.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## System Architecture
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+The full system follows a microservices approach where each layer scales independently.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+IoT Smart Meters
+      │
+      ▼ MQTT
+Message Broker (RabbitMQ)
+      │
+      ▼
+Backend API (Node.js) ──── Auth, routing, aggregation
+      │
+      ├──▶ Processing Services (Python) ── Analytics, anomaly detection, ML predictions
+      │
+      ├──▶ PostgreSQL ── Historical data
+      └──▶ Redis ──────── Real-time cache
+      │
+      ▼
+This Dashboard (React)
 ```
 
-**Edit a file directly in GitHub**
+This frontend connects to the backend API and falls back to generated mock data automatically when the backend is unavailable — making it fully usable for demos and development.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Dashboard Features
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- System overview with live stats: total power, average voltage, grid efficiency
+- Interactive map with house locations, grid lines, and transformer status (Leaflet)
+- House list with real-time status (online / warning / offline)
+- Per-house detail view with consumption history charts
+- Grid page monitoring distribution lines and transformers
+- Alerts system with severity levels (low / medium / high / critical) and acknowledgement
+- Settings page to configure API endpoint and alert thresholds
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## Tech Stack
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Layer | Technology |
+|---|---|
+| UI Framework | React 18 + TypeScript |
+| Build Tool | Vite |
+| Styling | Tailwind CSS + shadcn/ui |
+| State Management | Zustand |
+| Data Fetching | TanStack Query + Axios |
+| Charts | Recharts |
+| Map | Leaflet |
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/8c00a3d5-1858-48e3-9781-e5fccd883ac0) and click on Share -> Publish.
+## Getting Started
 
-## Can I connect a custom domain to my Lovable project?
+```sh
+# Install dependencies
+npm install
 
-Yes, you can!
+# Start the development server
+npm run dev
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Build for production
+npm run build
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## Backend Integration
+
+The app connects to a REST API at `http://localhost:3000/api` by default. If the backend is unreachable, it falls back to mock data automatically — no configuration needed.
+
+The API URL and alert thresholds can be changed from the Settings page inside the app.
+
+Expected endpoints:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Health check |
+| GET | `/api/houses` | All houses |
+| GET | `/api/houses/:id` | Single house |
+| GET | `/api/grid-lines` | Grid line data |
+| GET | `/api/transformers` | Transformer data |
+| GET | `/api/alerts` | Active alerts |
+| POST | `/api/alerts/:id/acknowledge` | Acknowledge alert |
+| GET | `/api/consumption?hours=24` | Consumption history |
+| GET | `/api/stats` | System-wide stats |
+
+---
+
+## Deployment
+
+The project includes a `Dockerfile` using a multi-stage build (Node to compile, nginx to serve).
+
+```sh
+docker build -t energygrid .
+docker run -p 8080:80 energygrid
+```
+
+On Railway: connect your GitHub repo — the Dockerfile is detected automatically. No extra configuration needed.
+
+---
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── dashboard/     # StatCard, PowerChart, AlertsList, HouseStatusGrid
+│   ├── map/           # EnergyMap (Leaflet)
+│   └── ui/            # shadcn/ui components
+├── pages/             # Index, Map, Houses, HouseDetails, Grid, Alerts, Settings
+├── store/             # Zustand store
+├── services/          # API layer with mock fallback
+├── data/              # Mock data generators
+└── types/             # TypeScript interfaces
+```
+
+---
+
+## Related
+
+This dashboard is part of a larger article on building smart grid infrastructure for growing cities.
+Read the full write-up: [Building a Smart Grid in Goma](https://your-blog-url.com)
+
+---
+
+## License
+
+MIT
